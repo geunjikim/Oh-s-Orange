@@ -252,58 +252,62 @@ html, body {
 <script>
 // ── Audio ──
 let AC = null;
+let audioReady = false;
+
 function getAC() {
   if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)();
   return AC;
 }
+
+// 모든 play 함수 진입 시 호출 — AC가 없거나 suspended면 무시
 function resume() {
-  const ac = getAC();
-  if (ac.state === 'suspended') ac.resume();
+  if (!AC) return;
+  if (AC.state === 'suspended') AC.resume();
 }
 
 function playPick() {
-  resume();
-  const t = getAC().currentTime, sr = getAC().sampleRate;
+  if (!audioReady || !AC) return;
+  const t = AC.currentTime, sr = AC.sampleRate;
   const tickLen = Math.floor(sr*0.011);
-  const tickBuf = getAC().createBuffer(1,tickLen,sr);
+  const tickBuf = AC.createBuffer(1,tickLen,sr);
   const td = tickBuf.getChannelData(0);
   for(let i=0;i<tickLen;i++) td[i]=(Math.random()*2-1)*Math.pow(1-i/tickLen,1.4);
-  const tickSrc=getAC().createBufferSource(); tickSrc.buffer=tickBuf;
-  const lp1=getAC().createBiquadFilter(); lp1.type='lowpass'; lp1.frequency.value=1000;
-  const bp1=getAC().createBiquadFilter(); bp1.type='bandpass'; bp1.frequency.value=600; bp1.Q.value=1.0;
-  const tg=getAC().createGain();
-  tickSrc.connect(lp1); lp1.connect(bp1); bp1.connect(tg); tg.connect(getAC().destination);
+  const tickSrc=AC.createBufferSource(); tickSrc.buffer=tickBuf;
+  const lp1=AC.createBiquadFilter(); lp1.type='lowpass'; lp1.frequency.value=1000;
+  const bp1=AC.createBiquadFilter(); bp1.type='bandpass'; bp1.frequency.value=600; bp1.Q.value=1.0;
+  const tg=AC.createGain();
+  tickSrc.connect(lp1); lp1.connect(bp1); bp1.connect(tg); tg.connect(AC.destination);
   tg.gain.setValueAtTime(1.0,t); tg.gain.exponentialRampToValueAtTime(0.001,t+0.011);
   tickSrc.start(t); tickSrc.stop(t+0.014);
   const woodLen=Math.floor(sr*0.038);
-  const woodBuf=getAC().createBuffer(1,woodLen,sr);
+  const woodBuf=AC.createBuffer(1,woodLen,sr);
   const wd=woodBuf.getChannelData(0);
   for(let i=0;i<woodLen;i++) wd[i]=(Math.random()*2-1)*Math.exp(-i/(woodLen*0.18));
-  const woodSrc=getAC().createBufferSource(); woodSrc.buffer=woodBuf;
-  const wlp=getAC().createBiquadFilter(); wlp.type='lowpass'; wlp.frequency.value=350;
-  const wg=getAC().createGain();
-  woodSrc.connect(wlp); wlp.connect(wg); wg.connect(getAC().destination);
+  const woodSrc=AC.createBufferSource(); woodSrc.buffer=woodBuf;
+  const wlp=AC.createBiquadFilter(); wlp.type='lowpass'; wlp.frequency.value=350;
+  const wg=AC.createGain();
+  woodSrc.connect(wlp); wlp.connect(wg); wg.connect(AC.destination);
   wg.gain.setValueAtTime(0.42,t+0.003); wg.gain.exponentialRampToValueAtTime(0.001,t+0.038);
   woodSrc.start(t+0.003); woodSrc.stop(t+0.042);
 }
 
 function playStretch(mag) {
-  resume();
-  const t=getAC().currentTime, sr=getAC().sampleRate;
+  if (!audioReady || !AC) return;
+  const t=AC.currentTime, sr=AC.sampleRate;
   const len=Math.floor(sr*0.08);
-  const buf=getAC().createBuffer(1,len,sr);
+  const buf=AC.createBuffer(1,len,sr);
   const d=buf.getChannelData(0);
   for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.exp(-i/(len*0.45));
-  const src=getAC().createBufferSource(); src.buffer=buf;
-  const bp=getAC().createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=Math.min(180+mag*2.5,600); bp.Q.value=2.2;
-  const lp=getAC().createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=800;
-  const g=getAC().createGain();
-  src.connect(bp); bp.connect(lp); lp.connect(g); g.connect(getAC().destination);
+  const src=AC.createBufferSource(); src.buffer=buf;
+  const bp=AC.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=Math.min(180+mag*2.5,600); bp.Q.value=2.2;
+  const lp=AC.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=800;
+  const g=AC.createGain();
+  src.connect(bp); bp.connect(lp); lp.connect(g); g.connect(AC.destination);
   g.gain.setValueAtTime(Math.min(0.32,0.1+mag*0.002),t);
   g.gain.exponentialRampToValueAtTime(0.001,t+0.075);
   src.start(t); src.stop(t+0.08);
-  const o=getAC().createOscillator(), og=getAC().createGain();
-  o.connect(og); og.connect(getAC().destination);
+  const o=AC.createOscillator(), og=AC.createGain();
+  o.connect(og); og.connect(AC.destination);
   o.type='sine';
   const baseF=60+mag*0.8;
   o.frequency.setValueAtTime(baseF,t);
@@ -315,21 +319,21 @@ function playStretch(mag) {
 }
 
 function playSnap() {
-  resume();
-  const t=getAC().currentTime, sr=getAC().sampleRate;
+  if (!audioReady || !AC) return;
+  const t=AC.currentTime, sr=AC.sampleRate;
   const atkLen=Math.floor(sr*0.018);
-  const atkBuf=getAC().createBuffer(1,atkLen,sr);
+  const atkBuf=AC.createBuffer(1,atkLen,sr);
   const ad=atkBuf.getChannelData(0);
   for(let i=0;i<atkLen;i++) ad[i]=(Math.random()*2-1)*Math.pow(1-i/atkLen,1.2);
-  const atkSrc=getAC().createBufferSource(); atkSrc.buffer=atkBuf;
-  const abp=getAC().createBiquadFilter(); abp.type='bandpass'; abp.frequency.value=420; abp.Q.value=1.8;
-  const alp=getAC().createBiquadFilter(); alp.type='lowpass'; alp.frequency.value=1000;
-  const ag=getAC().createGain();
-  atkSrc.connect(abp); abp.connect(alp); alp.connect(ag); ag.connect(getAC().destination);
+  const atkSrc=AC.createBufferSource(); atkSrc.buffer=atkBuf;
+  const abp=AC.createBiquadFilter(); abp.type='bandpass'; abp.frequency.value=420; abp.Q.value=1.8;
+  const alp=AC.createBiquadFilter(); alp.type='lowpass'; alp.frequency.value=1000;
+  const ag=AC.createGain();
+  atkSrc.connect(abp); abp.connect(alp); alp.connect(ag); ag.connect(AC.destination);
   ag.gain.setValueAtTime(0.75,t); ag.gain.exponentialRampToValueAtTime(0.001,t+0.018);
   atkSrc.start(t); atkSrc.stop(t+0.02);
-  const o1=getAC().createOscillator(), g1=getAC().createGain();
-  o1.connect(g1); g1.connect(getAC().destination);
+  const o1=AC.createOscillator(), g1=AC.createGain();
+  o1.connect(g1); g1.connect(AC.destination);
   o1.type='sine';
   o1.frequency.setValueAtTime(55,t);
   o1.frequency.linearRampToValueAtTime(130,t+0.05);
@@ -337,8 +341,8 @@ function playSnap() {
   g1.gain.setValueAtTime(0,t); g1.gain.linearRampToValueAtTime(0.45,t+0.012);
   g1.gain.exponentialRampToValueAtTime(0.001,t+0.25);
   o1.start(t); o1.stop(t+0.26);
-  const o2=getAC().createOscillator(), g2=getAC().createGain();
-  o2.connect(g2); g2.connect(getAC().destination);
+  const o2=AC.createOscillator(), g2=AC.createGain();
+  o2.connect(g2); g2.connect(AC.destination);
   o2.type='sine';
   o2.frequency.setValueAtTime(140,t+0.01);
   o2.frequency.exponentialRampToValueAtTime(85,t+0.18);
@@ -346,59 +350,59 @@ function playSnap() {
   g2.gain.exponentialRampToValueAtTime(0.001,t+0.2);
   o2.start(t); o2.stop(t+0.2);
   const thLen=Math.floor(sr*0.06);
-  const thBuf=getAC().createBuffer(1,thLen,sr);
+  const thBuf=AC.createBuffer(1,thLen,sr);
   const thd=thBuf.getChannelData(0);
   for(let i=0;i<thLen;i++) thd[i]=(Math.random()*2-1)*Math.exp(-i/(thLen*0.14));
-  const thSrc=getAC().createBufferSource(); thSrc.buffer=thBuf;
-  const tlp=getAC().createBiquadFilter(); tlp.type='lowpass'; tlp.frequency.value=200;
-  const tg=getAC().createGain();
-  thSrc.connect(tlp); tlp.connect(tg); tg.connect(getAC().destination);
+  const thSrc=AC.createBufferSource(); thSrc.buffer=thBuf;
+  const tlp=AC.createBiquadFilter(); tlp.type='lowpass'; tlp.frequency.value=200;
+  const tg=AC.createGain();
+  thSrc.connect(tlp); tlp.connect(tg); tg.connect(AC.destination);
   tg.gain.setValueAtTime(0.38,t); tg.gain.exponentialRampToValueAtTime(0.001,t+0.06);
   thSrc.start(t); thSrc.stop(t+0.065);
 }
 
 function playClick() {
-  resume();
-  const t=getAC().currentTime, sr=getAC().sampleRate;
+  if (!audioReady || !AC) return;
+  const t=AC.currentTime, sr=AC.sampleRate;
   const atkLen=Math.floor(sr*0.006);
-  const atkBuf=getAC().createBuffer(1,atkLen,sr);
+  const atkBuf=AC.createBuffer(1,atkLen,sr);
   const ad=atkBuf.getChannelData(0);
   for(let i=0;i<atkLen;i++) ad[i]=(Math.random()*2-1)*Math.pow(1-i/atkLen,1.8);
-  const atkSrc=getAC().createBufferSource(); atkSrc.buffer=atkBuf;
-  const aBP=getAC().createBiquadFilter(); aBP.type='bandpass'; aBP.frequency.value=2200; aBP.Q.value=1.2;
-  const aLP=getAC().createBiquadFilter(); aLP.type='lowpass'; aLP.frequency.value=2800;
-  const ag=getAC().createGain();
-  atkSrc.connect(aBP); aBP.connect(aLP); aLP.connect(ag); ag.connect(getAC().destination);
+  const atkSrc=AC.createBufferSource(); atkSrc.buffer=atkBuf;
+  const aBP=AC.createBiquadFilter(); aBP.type='bandpass'; aBP.frequency.value=2200; aBP.Q.value=1.2;
+  const aLP=AC.createBiquadFilter(); aLP.type='lowpass'; aLP.frequency.value=2800;
+  const ag=AC.createGain();
+  atkSrc.connect(aBP); aBP.connect(aLP); aLP.connect(ag); ag.connect(AC.destination);
   ag.gain.setValueAtTime(1.2,t); ag.gain.exponentialRampToValueAtTime(0.001,t+0.006);
   atkSrc.start(t); atkSrc.stop(t+0.008);
   const resLen=Math.floor(sr*0.045);
-  const resBuf=getAC().createBuffer(1,resLen,sr);
+  const resBuf=AC.createBuffer(1,resLen,sr);
   const rd=resBuf.getChannelData(0);
   for(let i=0;i<resLen;i++) rd[i]=(Math.random()*2-1)*Math.exp(-i/(resLen*0.22));
-  const resSrc=getAC().createBufferSource(); resSrc.buffer=resBuf;
-  const rBP=getAC().createBiquadFilter(); rBP.type='bandpass'; rBP.frequency.value=1100; rBP.Q.value=2.0;
-  const rg=getAC().createGain();
-  resSrc.connect(rBP); rBP.connect(rg); rg.connect(getAC().destination);
+  const resSrc=AC.createBufferSource(); resSrc.buffer=resBuf;
+  const rBP=AC.createBiquadFilter(); rBP.type='bandpass'; rBP.frequency.value=1100; rBP.Q.value=2.0;
+  const rg=AC.createGain();
+  resSrc.connect(rBP); rBP.connect(rg); rg.connect(AC.destination);
   rg.gain.setValueAtTime(0.75,t+0.001); rg.gain.exponentialRampToValueAtTime(0.001,t+0.05);
   resSrc.start(t+0.001); resSrc.stop(t+0.055);
   const thLen=Math.floor(sr*0.06);
-  const thBuf=getAC().createBuffer(1,thLen,sr);
+  const thBuf=AC.createBuffer(1,thLen,sr);
   const thd=thBuf.getChannelData(0);
   for(let i=0;i<thLen;i++) thd[i]=(Math.random()*2-1)*Math.exp(-i/(thLen*0.15));
-  const thSrc=getAC().createBufferSource(); thSrc.buffer=thBuf;
-  const tLP=getAC().createBiquadFilter(); tLP.type='lowpass'; tLP.frequency.value=280;
-  const tg2=getAC().createGain();
-  thSrc.connect(tLP); tLP.connect(tg2); tg2.connect(getAC().destination);
+  const thSrc=AC.createBufferSource(); thSrc.buffer=thBuf;
+  const tLP=AC.createBiquadFilter(); tLP.type='lowpass'; tLP.frequency.value=280;
+  const tg2=AC.createGain();
+  thSrc.connect(tLP); tLP.connect(tg2); tg2.connect(AC.destination);
   tg2.gain.setValueAtTime(0.6,t); tg2.gain.exponentialRampToValueAtTime(0.001,t+0.06);
   thSrc.start(t); thSrc.stop(t+0.065);
   const spLen=Math.floor(sr*0.005);
-  const spBuf=getAC().createBuffer(1,spLen,sr);
+  const spBuf=AC.createBuffer(1,spLen,sr);
   const sd=spBuf.getChannelData(0);
   for(let i=0;i<spLen;i++) sd[i]=(Math.random()*2-1)*(1-i/spLen);
-  const spSrc=getAC().createBufferSource(); spSrc.buffer=spBuf;
-  const sBP=getAC().createBiquadFilter(); sBP.type='bandpass'; sBP.frequency.value=1600; sBP.Q.value=1.5;
-  const sg=getAC().createGain();
-  spSrc.connect(sBP); sBP.connect(sg); sg.connect(getAC().destination);
+  const spSrc=AC.createBufferSource(); spSrc.buffer=spBuf;
+  const sBP=AC.createBiquadFilter(); sBP.type='bandpass'; sBP.frequency.value=1600; sBP.Q.value=1.5;
+  const sg=AC.createGain();
+  spSrc.connect(sBP); sBP.connect(sg); sg.connect(AC.destination);
   sg.gain.setValueAtTime(0.45,t+0.002); sg.gain.exponentialRampToValueAtTime(0.001,t+0.007);
   spSrc.start(t+0.002); spSrc.stop(t+0.008);
 }
@@ -666,27 +670,25 @@ for(let i=0;i<3;i++){
 </script>
 
 <div id="unlock" style="
-  position:fixed;inset:0;z-index:9999;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;
-  background:rgba(245,131,26,0.95);
+  position:fixed;top:0;left:0;right:0;z-index:9999;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+  background:rgba(245,131,26,0.96);
+  padding:14px 20px;
   cursor:pointer;
+  border-bottom:2px solid #1a1a1a;
 ">
-  <div style="
-    font-size:80px;
-    animation: pulse 1.2s ease-in-out infinite;
-  ">🍊</div>
-  <div style="
-    font-size:11px;
-    font-weight:600;
-    letter-spacing:2px;
-    color:#1a1a1a;
-    opacity:0.7;
-  ">🔊 VOLUME UP!</div>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <span style="font-size:22px;animation:pulse 1.2s ease-in-out infinite;">🍊</span>
+    <span style="font-size:12px;font-weight:700;letter-spacing:1.5px;color:#1a1a1a;">TAP HERE TO START</span>
+  </div>
+  <div style="font-size:10px;color:#1a1a1a;opacity:0.65;letter-spacing:0.5px;text-align:center;line-height:1.6;">
+    측면 무음 스위치 ON!
+  </div>
 </div>
 <style>
 @keyframes pulse {
   0%,100% { transform: scale(1); }
-  50%      { transform: scale(1.15); }
+  50%      { transform: scale(1.18); }
 }
 </style>
 <script>
@@ -694,32 +696,35 @@ for(let i=0;i<3;i++){
   const overlay = document.getElementById('unlock');
 
   function unlock(e) {
-    overlay.removeEventListener('touchstart', unlock);
-    overlay.removeEventListener('pointerdown', unlock);
+    overlay.removeEventListener('touchend', unlock);
+    overlay.removeEventListener('click', unlock);
 
-    // iOS: AudioContext 생성과 무음 재생을 반드시 동일한 터치 핸들러 안에서
-    if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)();
+    // 반드시 유저 제스처 핸들러 안에서 생성
+    AC = new (window.AudioContext || window.webkitAudioContext)();
 
-    const resume = () => {
-      // 무음 버퍼 재생 — iOS가 AudioContext를 완전히 활성화하는 유일한 방법
-      const buf = AC.createBuffer(1, 1, AC.sampleRate);
-      const src = AC.createBufferSource();
-      src.buffer = buf;
-      src.connect(AC.destination);
-      src.start(0);
-      src.onended = () => { overlay.style.display = 'none'; };
+    // iOS unlock: 무음 버퍼 즉시 재생
+    const silentBuf = AC.createBuffer(1, 1, AC.sampleRate);
+    const silentSrc = AC.createBufferSource();
+    silentSrc.buffer = silentBuf;
+    silentSrc.connect(AC.destination);
+    silentSrc.start(0);
+
+    const done = () => {
+      audioReady = true;
+      overlay.style.transition = 'opacity 0.25s';
+      overlay.style.opacity = '0';
+      setTimeout(() => overlay.remove(), 260);
     };
 
     if (AC.state === 'suspended') {
-      AC.resume().then(resume).catch(resume);
+      AC.resume().then(done).catch(done);
     } else {
-      resume();
+      done();
     }
   }
 
-  // touchstart 와 pointerdown 둘 다 — 브라우저 호환성
-  overlay.addEventListener('touchstart', unlock, {passive: false});
-  overlay.addEventListener('pointerdown', unlock);
+  overlay.addEventListener('touchend', unlock, {passive: false});
+  overlay.addEventListener('click', unlock);
 })();
 </script>
 
