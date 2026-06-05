@@ -692,20 +692,33 @@ for(let i=0;i<3;i++){
 <script>
 (function(){
   const overlay = document.getElementById('unlock');
+
   function unlock(e) {
-    // iOS는 반드시 유저 제스처 핸들러 안에서 AudioContext 생성/resume
-    if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)();
-    if (AC.state === 'suspended') {
-      AC.resume().then(() => {
-        overlay.style.display = 'none';
-      });
-    } else {
-      overlay.style.display = 'none';
-    }
     overlay.removeEventListener('touchstart', unlock);
     overlay.removeEventListener('pointerdown', unlock);
+
+    // iOS: AudioContext 생성과 무음 재생을 반드시 동일한 터치 핸들러 안에서
+    if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)();
+
+    const resume = () => {
+      // 무음 버퍼 재생 — iOS가 AudioContext를 완전히 활성화하는 유일한 방법
+      const buf = AC.createBuffer(1, 1, AC.sampleRate);
+      const src = AC.createBufferSource();
+      src.buffer = buf;
+      src.connect(AC.destination);
+      src.start(0);
+      src.onended = () => { overlay.style.display = 'none'; };
+    };
+
+    if (AC.state === 'suspended') {
+      AC.resume().then(resume).catch(resume);
+    } else {
+      resume();
+    }
   }
-  overlay.addEventListener('touchstart', unlock, {passive:true});
+
+  // touchstart 와 pointerdown 둘 다 — 브라우저 호환성
+  overlay.addEventListener('touchstart', unlock, {passive: false});
   overlay.addEventListener('pointerdown', unlock);
 })();
 </script>
