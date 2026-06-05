@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>🍊 Orange ASMR</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  width: 100%; height: 100%;
+  min-height: 100dvh;
+  overflow: hidden;
+  user-select: none;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── LAYOUT: portrait = column, landscape = row ── */
+.container {
+  display: flex;
+  width: 100vw;
+  height: 100dvh;
+  flex-direction: column; /* portrait default */
+}
+
+@media (orientation: landscape) {
+  .container { flex-direction: row; }
+  .zone { border-right: 3px solid #1a1a1a; border-bottom: none !important; }
+  .zone:last-child { border-right: none; }
+}
+
+.zone {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  border-bottom: 3px solid #1a1a1a;
+}
+.zone:last-child { border-bottom: none; }
+
+#z1 { background: #e8f5d0; }
+#z2 { background: #fcd96a; cursor: grab; }
+#z2:active { cursor: grabbing; }
+#z3 { background: #d6eaff; }
+
+.halftone-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.18;
+}
+
+/* ── TREE ── */
+.tree-svg {
+  overflow: visible;
+  filter: drop-shadow(3px 4px 0px #1a1a1a);
+  /* Scale tree to fit zone height */
+  max-height: 90%;
+  max-width: 90%;
+  width: auto;
+  height: auto;
+}
+
+/* ── ORANGE on tree ── */
+.o {
+  cursor: pointer;
+  transform-origin: center;
+  transform-box: fill-box;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.o.gone {
+  opacity: 0;
+  transform: scale(0.05);
+  pointer-events: none;
+}
+.o.appearing {
+  animation: growIn 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards;
+}
+@keyframes growIn {
+  from { opacity: 0; transform: scale(0.05); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* ── SQUISHY ── */
+#sq { overflow: visible; cursor: grab; touch-action: none; }
+#sq:active { cursor: grabbing; }
+
+/* ── KEYCAPS ── */
+.kb-base {
+  background: #b0b8c8;
+  border-radius: 14px;
+  padding: 14px 18px 10px;
+  display: flex;
+  gap: 14px;
+  align-items: flex-end;
+  border: 3px solid #1a1a1a;
+  box-shadow: 5px 5px 0 #1a1a1a;
+}
+
+.key-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.key-side {
+  width: 64px; height: 10px;
+  background: #7a3800;
+  border-radius: 0 0 7px 7px;
+  border: 2px solid #1a1a1a;
+  border-top: none;
+  transition: height 0.05s;
+}
+
+.key {
+  width: 64px; height: 60px;
+  border-radius: 10px;
+  background: #f5831a;
+  cursor: pointer;
+  position: relative;
+  border: 2.5px solid #1a1a1a;
+  transition: transform 0.05s;
+  overflow: hidden;
+}
+.key::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, #e06800 1px, transparent 1px);
+  background-size: 6px 6px;
+  opacity: 0.35;
+  border-radius: 8px;
+}
+.key::after {
+  content: '';
+  position: absolute;
+  top: 8px; left: 9px;
+  width: 16px; height: 9px;
+  background: rgba(255,255,255,0.5);
+  border-radius: 50%;
+  transform: rotate(-22deg);
+}
+.key.down { transform: translateY(8px); }
+.key.down + .key-side { height: 2px; }
+
+/* ── Landscape: bigger keys ── */
+@media (orientation: landscape) {
+  .key      { width: 54px; height: 50px; }
+  .key-side { width: 54px; }
+  .kb-base  { gap: 12px; padding: 12px 14px 8px; }
+}
+
+/* ── Particles ── */
+.pp {
+  position: absolute;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  pointer-events: none;
+  border: 1.5px solid #1a1a1a;
+  animation: pa 0.55s ease-out forwards;
+}
+@keyframes pa {
+  0%   { opacity: 1; transform: translate(0,0) scale(1); }
+  100% { opacity: 0; transform: translate(var(--tx),var(--ty)) scale(0); }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- ZONE 1: TREE -->
+  <div class="zone" id="z1">
+    <svg class="halftone-overlay" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <pattern id="ht1" x="0" y="0" width="10" height="10" patternUnits="userSpaceOnUse">
+          <circle cx="5" cy="5" r="1.8" fill="#2a6800"/>
+        </pattern>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#ht1)"/>
+    </svg>
+    <svg class="tree-svg" id="treeSVG" viewBox="0 0 220 320" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <pattern id="htLeaf" x="0" y="0" width="8" height="8" patternUnits="userSpaceOnUse">
+          <circle cx="4" cy="4" r="1.4" fill="#1a5200"/>
+        </pattern>
+        <clipPath id="mainClip"><circle cx="110" cy="148" r="82"/></clipPath>
+        <clipPath id="topClip"><circle cx="110" cy="76" r="56"/></clipPath>
+        <clipPath id="leftClip"><circle cx="58" cy="132" r="48"/></clipPath>
+        <clipPath id="rightClip"><circle cx="162" cy="132" r="48"/></clipPath>
+      </defs>
+      <rect x="97" y="218" width="26" height="92" rx="5" fill="#7a4820" stroke="#1a1a1a" stroke-width="2.5"/>
+      <line x1="103" y1="222" x2="101" y2="306" stroke="#5a3010" stroke-width="1.2" opacity="0.6"/>
+      <line x1="113" y1="222" x2="115" y2="306" stroke="#5a3010" stroke-width="1.2" opacity="0.6"/>
+      <circle cx="110" cy="148" r="82" fill="#3d9e3d" stroke="#1a1a1a" stroke-width="2.5"/>
+      <circle cx="110" cy="148" r="82" fill="url(#htLeaf)" clip-path="url(#mainClip)" opacity="0.5"/>
+      <circle cx="98" cy="132" r="52" fill="#52b852" opacity="0.5"/>
+      <circle cx="110" cy="76" r="56" fill="#4ab04a" stroke="#1a1a1a" stroke-width="2.5"/>
+      <circle cx="110" cy="76" r="56" fill="url(#htLeaf)" clip-path="url(#topClip)" opacity="0.45"/>
+      <circle cx="58" cy="132" r="48" fill="#46a846" stroke="#1a1a1a" stroke-width="2.5"/>
+      <circle cx="58" cy="132" r="48" fill="url(#htLeaf)" clip-path="url(#leftClip)" opacity="0.45"/>
+      <circle cx="162" cy="132" r="48" fill="#46a846" stroke="#1a1a1a" stroke-width="2.5"/>
+      <circle cx="162" cy="132" r="48" fill="url(#htLeaf)" clip-path="url(#rightClip)" opacity="0.45"/>
+      <g id="orangeGroup"></g>
+    </svg>
+  </div>
+
+  <!-- ZONE 2: SQUISHY -->
+  <div class="zone" id="z2">
+    <svg class="halftone-overlay" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <pattern id="ht2" x="0" y="0" width="10" height="10" patternUnits="userSpaceOnUse">
+          <circle cx="5" cy="5" r="1.8" fill="#c07000"/>
+        </pattern>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#ht2)"/>
+    </svg>
+    <svg id="sq" viewBox="0 0 220 230" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <pattern id="htBody" x="0" y="0" width="7" height="7" patternUnits="userSpaceOnUse">
+          <circle cx="3.5" cy="3.5" r="1.3" fill="#c04800"/>
+        </pattern>
+      </defs>
+      <ellipse id="shad" cx="110" cy="212" rx="52" ry="9" fill="rgba(0,0,0,0.18)"/>
+      <path id="body" fill="#f5831a" stroke="#1a1a1a" stroke-width="3" stroke-linejoin="round"/>
+      <path id="bodyHT" fill="url(#htBody)" opacity="0.55"/>
+      <path id="inner" fill="#f9a030" opacity="0.5"/>
+      <ellipse id="spec" cx="88" cy="80" rx="14" ry="9" fill="rgba(255,255,255,0.55)" transform="rotate(-25,88,80)"/>
+      <g id="leafGroup">
+        <path id="leafPath" d="M110,52 C100,30 70,18 65,28 C60,38 88,46 110,52 Z" fill="#2e7d1a" stroke="#1a1a1a" stroke-width="2.5" stroke-linejoin="round"/>
+        <path id="leafVein" d="M110,52 C92,42 74,28 65,28" stroke="#1a5010" stroke-width="1.5" fill="none"/>
+      </g>
+      <path id="stemP" d="M110,52 Q112,38 110,28" stroke="#3d6e18" stroke-width="5" fill="none" stroke-linecap="round"/>
+    </svg>
+  </div>
+
+  <!-- ZONE 3: KEYCAPS -->
+  <div class="zone" id="z3">
+    <svg class="halftone-overlay" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <pattern id="ht3" x="0" y="0" width="10" height="10" patternUnits="userSpaceOnUse">
+          <circle cx="5" cy="5" r="1.8" fill="#2040a0"/>
+        </pattern>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#ht3)"/>
+    </svg>
+    <div class="kb-base" id="kbBase"></div>
+  </div>
+
+</div>
+<script>
+// ── Audio ──
+let AC = null;
+function getAC() {
+  if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)();
+  return AC;
+}
+function resume() {
+  const ac = getAC();
+  if (ac.state === 'suspended') ac.resume();
+}
+
+function playPick() {
+  resume();
+  const t = getAC().currentTime, sr = getAC().sampleRate;
+  const tickLen = Math.floor(sr*0.011);
+  const tickBuf = getAC().createBuffer(1,tickLen,sr);
+  const td = tickBuf.getChannelData(0);
+  for(let i=0;i<tickLen;i++) td[i]=(Math.random()*2-1)*Math.pow(1-i/tickLen,1.4);
+  const tickSrc=getAC().createBufferSource(); tickSrc.buffer=tickBuf;
+  const lp1=getAC().createBiquadFilter(); lp1.type='lowpass'; lp1.frequency.value=1000;
+  const bp1=getAC().createBiquadFilter(); bp1.type='bandpass'; bp1.frequency.value=600; bp1.Q.value=1.0;
+  const tg=getAC().createGain();
+  tickSrc.connect(lp1); lp1.connect(bp1); bp1.connect(tg); tg.connect(getAC().destination);
+  tg.gain.setValueAtTime(1.0,t); tg.gain.exponentialRampToValueAtTime(0.001,t+0.011);
+  tickSrc.start(t); tickSrc.stop(t+0.014);
+  const woodLen=Math.floor(sr*0.038);
+  const woodBuf=getAC().createBuffer(1,woodLen,sr);
+  const wd=woodBuf.getChannelData(0);
+  for(let i=0;i<woodLen;i++) wd[i]=(Math.random()*2-1)*Math.exp(-i/(woodLen*0.18));
+  const woodSrc=getAC().createBufferSource(); woodSrc.buffer=woodBuf;
+  const wlp=getAC().createBiquadFilter(); wlp.type='lowpass'; wlp.frequency.value=350;
+  const wg=getAC().createGain();
+  woodSrc.connect(wlp); wlp.connect(wg); wg.connect(getAC().destination);
+  wg.gain.setValueAtTime(0.42,t+0.003); wg.gain.exponentialRampToValueAtTime(0.001,t+0.038);
+  woodSrc.start(t+0.003); woodSrc.stop(t+0.042);
+}
+
+function playStretch(mag) {
+  resume();
+  const t=getAC().currentTime, sr=getAC().sampleRate;
+  const len=Math.floor(sr*0.08);
+  const buf=getAC().createBuffer(1,len,sr);
+  const d=buf.getChannelData(0);
+  for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.exp(-i/(len*0.45));
+  const src=getAC().createBufferSource(); src.buffer=buf;
+  const bp=getAC().createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=Math.min(180+mag*2.5,600); bp.Q.value=2.2;
+  const lp=getAC().createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=800;
+  const g=getAC().createGain();
+  src.connect(bp); bp.connect(lp); lp.connect(g); g.connect(getAC().destination);
+  g.gain.setValueAtTime(Math.min(0.32,0.1+mag*0.002),t);
+  g.gain.exponentialRampToValueAtTime(0.001,t+0.075);
+  src.start(t); src.stop(t+0.08);
+  const o=getAC().createOscillator(), og=getAC().createGain();
+  o.connect(og); og.connect(getAC().destination);
+  o.type='sine';
+  const baseF=60+mag*0.8;
+  o.frequency.setValueAtTime(baseF,t);
+  o.frequency.linearRampToValueAtTime(baseF*1.4,t+0.07);
+  og.gain.setValueAtTime(0,t);
+  og.gain.linearRampToValueAtTime(Math.min(0.14,0.04+mag*0.001),t+0.02);
+  og.gain.exponentialRampToValueAtTime(0.001,t+0.08);
+  o.start(t); o.stop(t+0.08);
+}
+
+function playSnap() {
+  resume();
+  const t=getAC().currentTime, sr=getAC().sampleRate;
+  const atkLen=Math.floor(sr*0.018);
+  const atkBuf=getAC().createBuffer(1,atkLen,sr);
+  const ad=atkBuf.getChannelData(0);
+  for(let i=0;i<atkLen;i++) ad[i]=(Math.random()*2-1)*Math.pow(1-i/atkLen,1.2);
+  const atkSrc=getAC().createBufferSource(); atkSrc.buffer=atkBuf;
+  const abp=getAC().createBiquadFilter(); abp.type='bandpass'; abp.frequency.value=420; abp.Q.value=1.8;
+  const alp=getAC().createBiquadFilter(); alp.type='lowpass'; alp.frequency.value=1000;
+  const ag=getAC().createGain();
+  atkSrc.connect(abp); abp.connect(alp); alp.connect(ag); ag.connect(getAC().destination);
+  ag.gain.setValueAtTime(0.75,t); ag.gain.exponentialRampToValueAtTime(0.001,t+0.018);
+  atkSrc.start(t); atkSrc.stop(t+0.02);
+  const o1=getAC().createOscillator(), g1=getAC().createGain();
+  o1.connect(g1); g1.connect(getAC().destination);
+  o1.type='sine';
+  o1.frequency.setValueAtTime(55,t);
+  o1.frequency.linearRampToValueAtTime(130,t+0.05);
+  o1.frequency.exponentialRampToValueAtTime(65,t+0.22);
+  g1.gain.setValueAtTime(0,t); g1.gain.linearRampToValueAtTime(0.45,t+0.012);
+  g1.gain.exponentialRampToValueAtTime(0.001,t+0.25);
+  o1.start(t); o1.stop(t+0.26);
+  const o2=getAC().createOscillator(), g2=getAC().createGain();
+  o2.connect(g2); g2.connect(getAC().destination);
+  o2.type='sine';
+  o2.frequency.setValueAtTime(140,t+0.01);
+  o2.frequency.exponentialRampToValueAtTime(85,t+0.18);
+  g2.gain.setValueAtTime(0,t); g2.gain.linearRampToValueAtTime(0.28,t+0.02);
+  g2.gain.exponentialRampToValueAtTime(0.001,t+0.2);
+  o2.start(t); o2.stop(t+0.2);
+  const thLen=Math.floor(sr*0.06);
+  const thBuf=getAC().createBuffer(1,thLen,sr);
+  const thd=thBuf.getChannelData(0);
+  for(let i=0;i<thLen;i++) thd[i]=(Math.random()*2-1)*Math.exp(-i/(thLen*0.14));
+  const thSrc=getAC().createBufferSource(); thSrc.buffer=thBuf;
+  const tlp=getAC().createBiquadFilter(); tlp.type='lowpass'; tlp.frequency.value=200;
+  const tg=getAC().createGain();
+  thSrc.connect(tlp); tlp.connect(tg); tg.connect(getAC().destination);
+  tg.gain.setValueAtTime(0.38,t); tg.gain.exponentialRampToValueAtTime(0.001,t+0.06);
+  thSrc.start(t); thSrc.stop(t+0.065);
+}
+
+function playClick() {
+  resume();
+  const t=getAC().currentTime, sr=getAC().sampleRate;
+  const atkLen=Math.floor(sr*0.006);
+  const atkBuf=getAC().createBuffer(1,atkLen,sr);
+  const ad=atkBuf.getChannelData(0);
+  for(let i=0;i<atkLen;i++) ad[i]=(Math.random()*2-1)*Math.pow(1-i/atkLen,1.8);
+  const atkSrc=getAC().createBufferSource(); atkSrc.buffer=atkBuf;
+  const aBP=getAC().createBiquadFilter(); aBP.type='bandpass'; aBP.frequency.value=2200; aBP.Q.value=1.2;
+  const aLP=getAC().createBiquadFilter(); aLP.type='lowpass'; aLP.frequency.value=2800;
+  const ag=getAC().createGain();
+  atkSrc.connect(aBP); aBP.connect(aLP); aLP.connect(ag); ag.connect(getAC().destination);
+  ag.gain.setValueAtTime(1.2,t); ag.gain.exponentialRampToValueAtTime(0.001,t+0.006);
+  atkSrc.start(t); atkSrc.stop(t+0.008);
+  const resLen=Math.floor(sr*0.045);
+  const resBuf=getAC().createBuffer(1,resLen,sr);
+  const rd=resBuf.getChannelData(0);
+  for(let i=0;i<resLen;i++) rd[i]=(Math.random()*2-1)*Math.exp(-i/(resLen*0.22));
+  const resSrc=getAC().createBufferSource(); resSrc.buffer=resBuf;
+  const rBP=getAC().createBiquadFilter(); rBP.type='bandpass'; rBP.frequency.value=1100; rBP.Q.value=2.0;
+  const rg=getAC().createGain();
+  resSrc.connect(rBP); rBP.connect(rg); rg.connect(getAC().destination);
+  rg.gain.setValueAtTime(0.75,t+0.001); rg.gain.exponentialRampToValueAtTime(0.001,t+0.05);
+  resSrc.start(t+0.001); resSrc.stop(t+0.055);
+  const thLen=Math.floor(sr*0.06);
+  const thBuf=getAC().createBuffer(1,thLen,sr);
+  const thd=thBuf.getChannelData(0);
+  for(let i=0;i<thLen;i++) thd[i]=(Math.random()*2-1)*Math.exp(-i/(thLen*0.15));
+  const thSrc=getAC().createBufferSource(); thSrc.buffer=thBuf;
+  const tLP=getAC().createBiquadFilter(); tLP.type='lowpass'; tLP.frequency.value=280;
+  const tg2=getAC().createGain();
+  thSrc.connect(tLP); tLP.connect(tg2); tg2.connect(getAC().destination);
+  tg2.gain.setValueAtTime(0.6,t); tg2.gain.exponentialRampToValueAtTime(0.001,t+0.06);
+  thSrc.start(t); thSrc.stop(t+0.065);
+  const spLen=Math.floor(sr*0.005);
+  const spBuf=getAC().createBuffer(1,spLen,sr);
+  const sd=spBuf.getChannelData(0);
+  for(let i=0;i<spLen;i++) sd[i]=(Math.random()*2-1)*(1-i/spLen);
+  const spSrc=getAC().createBufferSource(); spSrc.buffer=spBuf;
+  const sBP=getAC().createBiquadFilter(); sBP.type='bandpass'; sBP.frequency.value=1600; sBP.Q.value=1.5;
+  const sg=getAC().createGain();
+  spSrc.connect(sBP); sBP.connect(sg); sg.connect(getAC().destination);
+  sg.gain.setValueAtTime(0.45,t+0.002); sg.gain.exponentialRampToValueAtTime(0.001,t+0.007);
+  spSrc.start(t+0.002); spSrc.stop(t+0.008);
+}
+
+// ── Particles ──
+function particles(cx,cy,zone,color) {
+  const rect=zone.getBoundingClientRect();
+  for(let i=0;i<8;i++){
+    const p=document.createElement('div');
+    p.className='pp'; p.style.background=color;
+    p.style.left=(cx-rect.left-4)+'px';
+    p.style.top=(cy-rect.top-4)+'px';
+    const a=(i/8)*Math.PI*2, r=22+Math.random()*22;
+    p.style.setProperty('--tx',Math.cos(a)*r+'px');
+    p.style.setProperty('--ty',Math.sin(a)*r+'px');
+    zone.appendChild(p);
+    setTimeout(()=>p.remove(),580);
+  }
+}
+
+// ── ZONE 1: TREE ──
+const z1=document.getElementById('z1');
+const og=document.getElementById('orangeGroup');
+const treeSVGEl=document.getElementById('treeSVG');
+
+// 배치된 오렌지 위치 추적 (겹침 방지용)
+const placedPositions = [];
+const MIN_DIST = 36; // 어느정도 겹침 허용
+
+function randomOrangePos(existingPositions) {
+  const zones = [
+    {x:[80,140],  y:[36,72]},   // 상단 (탑 원 안)
+    {x:[46,88],   y:[96,162]},  // 좌측 (좌 원 안)
+    {x:[132,174], y:[96,162]},  // 우측 (우 원 안)
+    {x:[82,138],  y:[110,200]}, // 하단 중앙 (메인 원 안)
+    {x:[88,132],  y:[72,120]},  // 중앙
+  ];
+  const refs = existingPositions || placedPositions;
+  let best = null, bestMinDist = -1;
+  for(let attempt = 0; attempt < 40; attempt++) {
+    const z = zones[Math.floor(Math.random() * zones.length)];
+    const cx = Math.round(z.x[0] + Math.random() * (z.x[1] - z.x[0]));
+    const cy = Math.round(z.y[0] + Math.random() * (z.y[1] - z.y[0]));
+    const minD = refs.reduce((m, p) => {
+      const d = Math.sqrt((cx-p.cx)**2 + (cy-p.cy)**2);
+      return Math.min(m, d);
+    }, Infinity);
+    if(minD >= MIN_DIST) return {cx, cy};
+    if(minD > bestMinDist) { bestMinDist = minD; best = {cx, cy}; }
+  }
+  return best || {cx: Math.round(80+Math.random()*60), cy: Math.round(70+Math.random()*120)};
+}
+
+// 초기 오렌지 위치 랜덤 생성 (8개) — 겹침 방지
+const treeOranges = Array.from({length:8}, () => {
+  const p = randomOrangePos(placedPositions);
+  placedPositions.push(p);
+  return {...p, r:26};
+});
+
+treeOranges.forEach((pos,idx)=>{
+  const ns='http://www.w3.org/2000/svg';
+  const g=document.createElementNS(ns,'g');
+  g.classList.add('o'); g.style.cursor='pointer';
+  const c=document.createElementNS(ns,'circle');
+  c.setAttribute('cx',pos.cx); c.setAttribute('cy',pos.cy); c.setAttribute('r',pos.r);
+  c.setAttribute('fill','#f5831a'); c.setAttribute('stroke','#1a1a1a'); c.setAttribute('stroke-width','2.5');
+  const htId='htOT'+idx;
+  const defs=treeSVGEl.querySelector('defs');
+  const pat=document.createElementNS(ns,'pattern');
+  pat.setAttribute('id',htId); pat.setAttribute('x','0'); pat.setAttribute('y','0');
+  pat.setAttribute('width','6'); pat.setAttribute('height','6');
+  pat.setAttribute('patternUnits','userSpaceOnUse');
+  const dot=document.createElementNS(ns,'circle');
+  dot.setAttribute('cx','3'); dot.setAttribute('cy','3'); dot.setAttribute('r','1.1'); dot.setAttribute('fill','#c04800');
+  pat.appendChild(dot); defs.appendChild(pat);
+  const clipId='oc'+idx;
+  const cp=document.createElementNS(ns,'clipPath'); cp.setAttribute('id',clipId);
+  const cpC=document.createElementNS(ns,'circle');
+  cpC.setAttribute('cx',pos.cx); cpC.setAttribute('cy',pos.cy); cpC.setAttribute('r',pos.r);
+  cp.appendChild(cpC); defs.appendChild(cp);
+  const ht=document.createElementNS(ns,'circle');
+  ht.setAttribute('cx',pos.cx); ht.setAttribute('cy',pos.cy); ht.setAttribute('r',pos.r);
+  ht.setAttribute('fill',`url(#${htId})`);
+  ht.setAttribute('clip-path',`url(#${clipId})`);
+  ht.setAttribute('opacity','0.55');
+  const sh=document.createElementNS(ns,'ellipse');
+  sh.setAttribute('cx',pos.cx-pos.r*0.28); sh.setAttribute('cy',pos.cy-pos.r*0.32);
+  sh.setAttribute('rx',pos.r*0.28); sh.setAttribute('ry',pos.r*0.18);
+  sh.setAttribute('fill','rgba(255,255,255,0.5)');
+  sh.setAttribute('transform',`rotate(-25,${pos.cx-pos.r*0.28},${pos.cy-pos.r*0.32})`);
+  const st=document.createElementNS(ns,'line');
+  st.setAttribute('x1',pos.cx); st.setAttribute('y1',pos.cy-pos.r);
+  st.setAttribute('x2',pos.cx+1); st.setAttribute('y2',pos.cy-pos.r-5);
+  st.setAttribute('stroke','#2e7010'); st.setAttribute('stroke-width','2.5'); st.setAttribute('stroke-linecap','round');
+  g.appendChild(c); g.appendChild(ht); g.appendChild(sh); g.appendChild(st);
+  og.appendChild(g);
+  g.addEventListener('pointerdown',e=>{
+    e.stopPropagation();
+    if(g.classList.contains('gone')) return;
+    playPick();
+    g.classList.add('gone');
+    particles(e.clientX,e.clientY,z1,'#f5831a');
+    setTimeout(()=>{
+      // 리스폰 시 현재 살아있는 오렌지 위치 참조해서 겹침 최소화
+      const activePosArr = treeOranges.filter((_,i)=>i!==idx).map(p=>({cx:p.cx,cy:p.cy}));
+      const rpos = randomOrangePos(activePosArr);
+      const elems = g.querySelectorAll('circle, ellipse, line');
+      const dx = rpos.cx - pos.cx;
+      const dy = rpos.cy - pos.cy;
+      // update all child element positions
+      elems.forEach(el => {
+        const tag = el.tagName;
+        if(tag==='circle'){
+          const ocx = parseFloat(el.getAttribute('cx'));
+          const ocy = parseFloat(el.getAttribute('cy'));
+          if(el.getAttribute('r') === String(pos.r) || Math.abs(parseFloat(el.getAttribute('r'))-pos.r)<1){
+            el.setAttribute('cx', ocx+dx); el.setAttribute('cy', ocy+dy);
+          } else {
+            el.setAttribute('cx', ocx+dx); el.setAttribute('cy', ocy+dy);
+          }
+        } else if(tag==='ellipse'){
+          el.setAttribute('cx', parseFloat(el.getAttribute('cx'))+dx);
+          el.setAttribute('cy', parseFloat(el.getAttribute('cy'))+dy);
+          const t = el.getAttribute('transform')||'';
+          el.setAttribute('transform', t.replace(/rotate\(([^,]+),([^,]+),([^)]+)\)/,(m,a,x,y)=>`rotate(${a},${parseFloat(x)+dx},${parseFloat(y)+dy})`));
+        } else if(tag==='line'){
+          el.setAttribute('x1', parseFloat(el.getAttribute('x1'))+dx);
+          el.setAttribute('y1', parseFloat(el.getAttribute('y1'))+dy);
+          el.setAttribute('x2', parseFloat(el.getAttribute('x2'))+dx);
+          el.setAttribute('y2', parseFloat(el.getAttribute('y2'))+dy);
+        }
+      });
+      // update clip path circle
+      const clipCirc = document.getElementById('oc'+idx);
+      if(clipCirc){
+        const cc = clipCirc.querySelector('circle');
+        if(cc){ cc.setAttribute('cx', rpos.cx); cc.setAttribute('cy', rpos.cy); }
+      }
+      pos.cx = rpos.cx; pos.cy = rpos.cy;
+      g.classList.add('appearing');
+      g.classList.remove('gone');
+      setTimeout(()=>g.classList.remove('appearing'),400);
+    },3000);
+  });
+});
+
+// ── ZONE 2: SQUISHY ──
+// Responsive: SVG size adapts to zone
+const z2=document.getElementById('z2');
+const sqEl=document.getElementById('sq');
+
+function setSqSize(){
+  const zw=z2.clientWidth, zh=z2.clientHeight;
+  const s=Math.min(zw,zh)*0.82;
+  sqEl.setAttribute('width',s);
+  sqEl.setAttribute('height',s);
+}
+setSqSize();
+window.addEventListener('resize',setSqSize);
+
+const bodyEl=document.getElementById('body');
+const bodyHTEl=document.getElementById('bodyHT');
+const innerEl=document.getElementById('inner');
+const shadEl=document.getElementById('shad');
+const specEl=document.getElementById('spec');
+const stemEl=document.getElementById('stemP');
+const leafPathEl=document.getElementById('leafPath');
+const leafVeinEl=document.getElementById('leafVein');
+
+const CX=110,CY=115,R=68;
+let drag=null,sX=0,sY=0,vX=0,vY=0,raf2,lastSnd=0;
+
+function blobPath(dx,dy,cx,cy,r){
+  const mag=Math.sqrt(dx*dx+dy*dy);
+  const ang=Math.atan2(dy,dx);
+  const pull=Math.min(mag,80);
+  const stretch=1+pull/85, squeeze=1/Math.sqrt(stretch);
+  const N=32; const pts=[];
+  for(let i=0;i<N;i++){
+    const a=(i/N)*Math.PI*2;
+    const ux=Math.cos(a),uy=Math.sin(a);
+    const along=ux*Math.cos(ang)+uy*Math.sin(ang);
+    const perp=-ux*Math.sin(ang)+uy*Math.cos(ang);
+    const ef=along>0?stretch:(1+(stretch-1)*0.08);
+    const ex=along*ef*Math.cos(ang)-perp*squeeze*Math.sin(ang);
+    const ey=along*ef*Math.sin(ang)+perp*squeeze*Math.cos(ang);
+    pts.push({x:cx+ex*r,y:cy+ey*r});
+  }
+  let d=`M${pts[0].x.toFixed(1)} ${pts[0].y.toFixed(1)}`;
+  for(let i=0;i<N;i++){
+    const p0=pts[(i-1+N)%N],p1=pts[i],p2=pts[(i+1)%N],p3=pts[(i+2)%N];
+    const c1x=p1.x+(p2.x-p0.x)/6,c1y=p1.y+(p2.y-p0.y)/6;
+    const c2x=p2.x-(p3.x-p1.x)/6,c2y=p2.y-(p3.y-p1.y)/6;
+    d+=` C${c1x.toFixed(1)} ${c1y.toFixed(1)},${c2x.toFixed(1)} ${c2y.toFixed(1)},${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`;
+  }
+  return d+'Z';
+}
+
+function drawBlob(dx,dy){
+  const bp=blobPath(dx,dy,CX,CY,R);
+  bodyEl.setAttribute('d',bp);
+  bodyHTEl.setAttribute('d',bp);
+  innerEl.setAttribute('d',blobPath(dx,dy,CX,CY,R*0.52));
+  const mag=Math.min(Math.sqrt(dx*dx+dy*dy),80);
+  shadEl.setAttribute('rx',(50+mag*0.1).toFixed(1));
+  shadEl.setAttribute('ry',Math.max(2,9-mag*0.07).toFixed(1));
+  specEl.setAttribute('cx',(88-dx*0.06).toFixed(1));
+  specEl.setAttribute('cy',(80-dy*0.06).toFixed(1));
+  const tx=(CX+dx*0.03).toFixed(1);
+  const ty=(CY-R+dy*0.03-2).toFixed(1);
+  stemEl.setAttribute('d',`M${tx},${ty} Q${(+tx+2)},${(+ty-14)} ${tx},${(+ty-22)}`);
+  const lrot=Math.atan2(dy,dx)*(180/Math.PI)*0.15;
+  leafPathEl.setAttribute('transform',`translate(${(+tx-110).toFixed(1)},${(+ty-52).toFixed(1)}) rotate(${lrot.toFixed(1)},110,52)`);
+  leafVeinEl.setAttribute('transform',`translate(${(+tx-110).toFixed(1)},${(+ty-52).toFixed(1)}) rotate(${lrot.toFixed(1)},110,52)`);
+}
+drawBlob(0,0);
+
+sqEl.addEventListener('pointerdown',e=>{
+  e.preventDefault(); sqEl.setPointerCapture(e.pointerId);
+  drag={x0:e.clientX,y0:e.clientY}; cancelAnimationFrame(raf2);
+});
+sqEl.addEventListener('pointermove',e=>{
+  if(!drag) return;
+  sX=(e.clientX-drag.x0)*1.3; sY=(e.clientY-drag.y0)*1.3;
+  drawBlob(sX,sY);
+  const now=Date.now(),mag=Math.sqrt(sX*sX+sY*sY);
+  if(mag>10&&now-lastSnd>90){playStretch(mag);lastSnd=now;}
+});
+sqEl.addEventListener('pointerup',e=>{
+  if(!drag) return; drag=null;
+  const mag=Math.sqrt(sX*sX+sY*sY);
+  if(mag>8){playSnap();particles(e.clientX,e.clientY,z2,'#f5831a');}
+  vX=-sX*0.3; vY=-sY*0.3; springLoop();
+});
+
+function springLoop(){
+  const k=0.15,damp=0.70;
+  vX+=-k*sX; vY+=-k*sY; vX*=damp; vY*=damp; sX+=vX; sY+=vY;
+  drawBlob(sX,sY);
+  if(Math.sqrt(sX*sX+sY*sY)>0.25||Math.sqrt(vX*vX+vY*vY)>0.08){
+    raf2=requestAnimationFrame(springLoop);
+  } else {sX=0;sY=0;drawBlob(0,0);}
+}
+
+// ── ZONE 3: KEYCAPS ──
+const z3=document.getElementById('z3');
+const kb=document.getElementById('kbBase');
+const ktimers=[];
+
+for(let i=0;i<3;i++){
+  const kw=document.createElement('div'); kw.className='key-wrap';
+  const k=document.createElement('div'); k.className='key';
+  const side=document.createElement('div'); side.className='key-side';
+  kw.appendChild(k); kw.appendChild(side); kb.appendChild(kw);
+  ktimers.push(null);
+  k.addEventListener('pointerdown',e=>{
+    e.preventDefault(); playClick();
+    k.classList.add('down'); side.style.height='2px';
+    clearTimeout(ktimers[i]);
+    ktimers[i]=setTimeout(()=>{k.classList.remove('down');side.style.height='10px';},115);
+    particles(e.clientX,e.clientY,z3,'#f5831a');
+  });
+}
+</script>
+
+<div id="unlock" style="
+  position:fixed;inset:0;z-index:9999;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;
+  background:rgba(245,131,26,0.95);
+  cursor:pointer;
+">
+  <div style="
+    font-size:80px;
+    animation: pulse 1.2s ease-in-out infinite;
+  ">🍊</div>
+  <div style="
+    font-size:11px;
+    font-weight:600;
+    letter-spacing:2px;
+    color:#1a1a1a;
+    opacity:0.7;
+  ">🔊 VOLUME UP!</div>
+</div>
+<style>
+@keyframes pulse {
+  0%,100% { transform: scale(1); }
+  50%      { transform: scale(1.15); }
+}
+</style>
+<script>
+(function(){
+  const overlay = document.getElementById('unlock');
+  function unlock(e) {
+    // iOS는 반드시 유저 제스처 핸들러 안에서 AudioContext 생성/resume
+    if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)();
+    if (AC.state === 'suspended') {
+      AC.resume().then(() => {
+        overlay.style.display = 'none';
+      });
+    } else {
+      overlay.style.display = 'none';
+    }
+    overlay.removeEventListener('touchstart', unlock);
+    overlay.removeEventListener('pointerdown', unlock);
+  }
+  overlay.addEventListener('touchstart', unlock, {passive:true});
+  overlay.addEventListener('pointerdown', unlock);
+})();
+</script>
+
+</body>
+</html>
